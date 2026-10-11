@@ -1,0 +1,134 @@
+[
+  {
+    "id": "PS-01",
+    "name": "Grand Bazaar Police Station",
+    "division": "Puducherry North",
+    "lat": 11.9348,
+    "lng": 79.8315,
+    "contact": "+91 413 2224001",
+    "inspector": "Insp. K. Rajendran",
+    "coverage_sqkm": 4.2,
+    "personnel": 48
+  },
+  {
+    "id": "PS-02",
+    "name": "Muthialpet Police Station",
+    "division": "Puducherry North",
+    "lat": 11.9515,
+    "lng": 79.8302,
+    "contact": "+91 413 2235002",
+    "inspector": "Insp. M. Selvam",
+    "coverage_sqkm": 6.8,
+    "personnel": 42
+  },
+  {
+    "id": "PS-03",
+    "name": "Lawspet Police Station",
+    "division": "Puducherry North",
+    "lat": 11.9634,
+    "lng": 79.8189,
+    "contact": "+91 413 2252103",
+    "inspector": "Insp. S. Baskaran",
+    "coverage_sqkm": 9.5,
+    "personnel": 52
+  },
+  {
+    "id": "PS-04",
+    "name": "Orleanpet Police Station",
+    "division": "Puducherry South",
+    "lat": 11.9288,
+    "lng": 79.8205,
+    "contact": "+91 413 2201304",
+    "inspector": "Insp. V. Anbazhagan",
+    "coverage_sqkm": 5.1,
+    "personnel": 45
+  },
+  {
+    "id": "PS-05",
+    "name": "Mudaliarpet Police Station",
+    "division": "Puducherry South",
+    "lat": 11.9184,
+    "lng": 79.8143,
+    "contact": "+91 413 2356205",
+    "inspector": "Insp. R. Murugan",
+    "coverage_sqkm": 7.4,
+    "personnel": 38
+  },
+  {
+    "id": "PS-06",
+    "name": "Reddiarpalayam Police Station",
+    "division": "Puducherry West",
+    "lat": 11.9351,
+    "lng": 79.7942,
+    "contact": "+91 413 2291406",
+    "inspector": "Insp. D. Sivakumar",
+    "coverage_sqkm": 8.9,
+    "personnel": 40
+  },
+  {
+    "id": "PS-07",
+    "name": "D'Nagar Police Station",
+    "division": "Puducherry West",
+    "lat": 11.9472,
+    "lng": 79.808,
+    "contact": "+91 413 2273107",
+    "inspector": "Insp. P. Thanigaivel",
+    "coverage_sqkm": 6.0,
+    "personnel": 36
+  },
+  {
+    "id": "PS-08",
+    "name": "Villianur Police Station",
+    "division": "Puducherry Rural",
+    "lat": 11.9161,
+    "lng": 79.7571,
+    "contact": "+91 413 2666108",
+    "inspector": "Insp. E. Jayakumar",
+    "coverage_sqkm": 24.3,
+    "personnel": 55
+  },
+  {
+    "id": "PS-09",
+    "name": "Ariyankuppam Police Station",
+    "division": "Puducherry South",
+    "lat": 11.895,
+    "lng": 79.8125,
+    "contact": "+91 413 2600209",
+    "inspector": "Insp. T. Manikandan",
+    "coverage_sqkm": 14.8,
+    "personnel": 41
+  },
+  {
+    "id": "PS-10",
+    "name": "Kalapet Police Station",
+    "division": "Puducherry Coastal/North",
+    "lat": 12.0305,
+    "lng": 79.8596,
+    "contact": "+91 413 2655110",
+    "inspector": "Insp. B. Chandran",
+    "coverage_sqkm": 18.2,
+    "personnel": 39
+  },
+  {
+    "id": "PS-11",
+    "name": "Bahour Police Station",
+    "division": "Puducherry South Rural",
+    "lat": 11.8028,
+    "lng": 79.7423,
+    "contact": "+91 413 2633211",
+    "inspector": "Insp. G. Vetrivel",
+    "coverage_sqkm": 31.5,
+    "personnel": 35
+  },
+  {
+    "id": "PS-12",
+    "name": "Coastal & Marine Police Station",
+    "division": "Coastal Security",
+    "lat": 11.9315,
+    "lng": 79.8355,
+    "contact": "+91 413 2229912",
+    "inspector": "Insp. S. Stalin",
+    "coverage_sqkm": 12.0,
+    "personnel": 30
+  }
+]

@@ -1,0 +1,200 @@
+[
+  {
+    "id": "CAM-01",
+    "name": "Goubert Ave North Watch",
+    "lat": 11.936,
+    "lng": 79.8355,
+    "type": "PTZ 360",
+    "status": "ONLINE",
+    "zone": "White Town"
+  },
+  {
+    "id": "CAM-02",
+    "name": "Rock Beach Memorial",
+    "lat": 11.9315,
+    "lng": 79.8358,
+    "type": "Fixed 4K",
+    "status": "ONLINE",
+    "zone": "White Town"
+  },
+  {
+    "id": "CAM-03",
+    "name": "French Consulate Junction",
+    "lat": 11.9325,
+    "lng": 79.834,
+    "type": "PTZ 360",
+    "status": "ONLINE",
+    "zone": "White Town"
+  },
+  {
+    "id": "CAM-04",
+    "name": "Grand Bazaar East Gate",
+    "lat": 11.9358,
+    "lng": 79.8305,
+    "type": "Dome ANPR",
+    "status": "ONLINE",
+    "zone": "Town Center"
+  },
+  {
+    "id": "CAM-05",
+    "name": "Nehru St / MG Road Signal",
+    "lat": 11.9365,
+    "lng": 79.8275,
+    "type": "ANPR 4K",
+    "status": "ONLINE",
+    "zone": "Town Center"
+  },
+  {
+    "id": "CAM-06",
+    "name": "Bussy St Clock Crossing",
+    "lat": 11.93,
+    "lng": 79.827,
+    "type": "PTZ 360",
+    "status": "OFFLINE",
+    "zone": "Town Center"
+  },
+  {
+    "id": "CAM-07",
+    "name": "New Bus Stand Bay 1",
+    "lat": 11.928,
+    "lng": 79.8185,
+    "type": "Dome ANPR",
+    "status": "ONLINE",
+    "zone": "Orleanpet"
+  },
+  {
+    "id": "CAM-08",
+    "name": "New Bus Stand Exit Road",
+    "lat": 11.927,
+    "lng": 79.8175,
+    "type": "Fixed 4K",
+    "status": "ONLINE",
+    "zone": "Orleanpet"
+  },
+  {
+    "id": "CAM-09",
+    "name": "Railway Station Main Porch",
+    "lat": 11.924,
+    "lng": 79.827,
+    "type": "PTZ 360",
+    "status": "ONLINE",
+    "zone": "Railway Zone"
+  },
+  {
+    "id": "CAM-10",
+    "name": "Indira Gandhi Circle West",
+    "lat": 11.9325,
+    "lng": 79.8045,
+    "type": "ANPR 4K",
+    "status": "ONLINE",
+    "zone": "Boulevard Ring"
+  },
+  {
+    "id": "CAM-11",
+    "name": "Nellithope Signal Post",
+    "lat": 11.9315,
+    "lng": 79.8135,
+    "type": "Fixed 4K",
+    "status": "MAINTENANCE",
+    "zone": "Nellithope"
+  },
+  {
+    "id": "CAM-12",
+    "name": "100ft Road Rajiv Gandhi Sq",
+    "lat": 11.921,
+    "lng": 79.808,
+    "type": "ANPR 4K",
+    "status": "ONLINE",
+    "zone": "Mudaliarpet"
+  },
+  {
+    "id": "CAM-13",
+    "name": "Lawspet Cluny Signal",
+    "lat": 11.962,
+    "lng": 79.821,
+    "type": "Fixed 4K",
+    "status": "ONLINE",
+    "zone": "Lawspet"
+  },
+  {
+    "id": "CAM-14",
+    "name": "Airport Road Roundabout",
+    "lat": 11.969,
+    "lng": 79.814,
+    "type": "PTZ 360",
+    "status": "ONLINE",
+    "zone": "Lawspet"
+  },
+  {
+    "id": "CAM-15",
+    "name": "ECR Toll Checkpost",
+    "lat": 11.963,
+    "lng": 79.8375,
+    "type": "ANPR 4K",
+    "status": "ONLINE",
+    "zone": "Muthialpet"
+  },
+  {
+    "id": "CAM-16",
+    "name": "Muthialpet Market Tower",
+    "lat": 11.9535,
+    "lng": 79.8305,
+    "type": "Dome ANPR",
+    "status": "ONLINE",
+    "zone": "Muthialpet"
+  },
+  {
+    "id": "CAM-17",
+    "name": "JIPMER Gorimedu Main Gate",
+    "lat": 11.9545,
+    "lng": 79.7985,
+    "type": "PTZ 360",
+    "status": "ONLINE",
+    "zone": "Gorimedu"
+  },
+  {
+    "id": "CAM-18",
+    "name": "Reddiarpalayam Main Jn",
+    "lat": 11.936,
+    "lng": 79.7935,
+    "type": "Fixed 4K",
+    "status": "ONLINE",
+    "zone": "Reddiarpalayam"
+  },
+  {
+    "id": "CAM-19",
+    "name": "Villianur Temple North Gate",
+    "lat": 11.9165,
+    "lng": 79.7565,
+    "type": "Fixed 4K",
+    "status": "ONLINE",
+    "zone": "Villianur"
+  },
+  {
+    "id": "CAM-20",
+    "name": "Chunnambar Boat House Rd",
+    "lat": 11.883,
+    "lng": 79.806,
+    "type": "PTZ 360",
+    "status": "OFFLINE",
+    "zone": "Ariyankuppam"
+  },
+  {
+    "id": "CAM-21",
+    "name": "Pondicherry Univ Gate 2",
+    "lat": 12.026,
+    "lng": 79.854,
+    "type": "ANPR 4K",
+    "status": "ONLINE",
+    "zone": "Kalapet"
+  },
+  {
+    "id": "CAM-22",
+    "name": "Bahour Market Entrance",
+    "lat": 11.8015,
+    "lng": 79.7405,
+    "type": "Fixed 4K",
+    "status": "ONLINE",
+    "zone": "Bahour"
+  }
+]

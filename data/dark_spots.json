@@ -1,0 +1,79 @@
+[
+  {
+    "id": "DS-01",
+    "name": "Rue Suffren - Dumas Connecting Alley",
+    "lat": 11.932,
+    "lng": 79.8342,
+    "lux_level": 4.2,
+    "defect": "Burnt street sodium lamps; obscured by banyan canopy",
+    "crime_history": "3 Tourist bag snatches in past 45 days",
+    "priority": "HIGH",
+    "pwd_ticket": "PWD-ELEC-2026-904"
+  },
+  {
+    "id": "DS-02",
+    "name": "New Bus Stand Rear Canal Walkway",
+    "lat": 11.9262,
+    "lng": 79.8168,
+    "lux_level": 1.8,
+    "defect": "Missing poles, dense overgrowth, open drain",
+    "crime_history": "NDPS use, mobile phone snatchings at night",
+    "priority": "CRITICAL",
+    "pwd_ticket": "PWD-ELEC-2026-871"
+  },
+  {
+    "id": "DS-03",
+    "name": "Railway Goods Shed Service Lane",
+    "lat": 11.9225,
+    "lng": 79.8252,
+    "lux_level": 2.5,
+    "defect": "Industrial stretch with unpowered high masts",
+    "crime_history": "Assault and illegal liquor consumption",
+    "priority": "HIGH",
+    "pwd_ticket": "PWD-ELEC-2026-892"
+  },
+  {
+    "id": "DS-04",
+    "name": "Lawspet Navalar Nedunchezhian St Alley",
+    "lat": 11.9655,
+    "lng": 79.817,
+    "lux_level": 3.1,
+    "defect": "Flickering halogen fixtures, dead bulb cluster",
+    "crime_history": "House break-in attempts, 2-wheeler theft",
+    "priority": "MEDIUM",
+    "pwd_ticket": "PWD-ELEC-2026-915"
+  },
+  {
+    "id": "DS-05",
+    "name": "ECR Kanagachettikulam Beach Approach",
+    "lat": 12.028,
+    "lng": 79.861,
+    "lux_level": 1.2,
+    "defect": "Zero municipal lighting for 600m coastal stretch",
+    "crime_history": "NDPS contraband exchange, harassment",
+    "priority": "CRITICAL",
+    "pwd_ticket": "PWD-ELEC-2026-840"
+  },
+  {
+    "id": "DS-06",
+    "name": "Ariyankuppam Veerampattinam Fishing Trail",
+    "lat": 11.89,
+    "lng": 79.819,
+    "lux_level": 2.9,
+    "defect": "Damaged cabling post-monsoon",
+    "crime_history": "Eve teasing, drunken squabbles",
+    "priority": "HIGH",
+    "pwd_ticket": "PWD-ELEC-2026-888"
+  },
+  {
+    "id": "DS-07",
+    "name": "Villianur Bypass Dark Curve",
+    "lat": 11.912,
+    "lng": 79.762,
+    "lux_level": 3.5,
+    "defect": "Highway median lights non-functional",
+    "crime_history": "Highway robbery, night hit-and-runs",
+    "priority": "HIGH",
+    "pwd_ticket": "PWD-ELEC-2026-930"
+  }
+]

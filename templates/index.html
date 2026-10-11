@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NammaGuard | Puducherry Police C4I Geospatial Intelligence System</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Leaflet MarkerCluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- TOP C4I POLICE COMMAND HEADER -->
+  <header class="c4i-header">
+    <div class="brand-section">
+      <div class="police-crest">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="brand-title">
+        <h1>NammaGuard <span class="tag">PUDUCHERRY POLICE C4I</span></h1>
+        <p>Geospatial Intelligence, Analytics & Decision-Support System • Theme: M-A-P-P</p>
+      </div>
+    </div>
+
+    <!-- Live Telemetry & Clocks -->
+    <div class="header-telemetry">
+      <div class="status-pill" style="color:var(--accent-cyan); border-color:rgba(6,182,212,0.4); background:rgba(6,182,212,0.12);" title="Cases filed through NammaGuard website">
+        <i class="fa-solid fa-globe"></i> Portal Filed: <strong id="headerWebCases" style="font-family:var(--font-mono); margin-left:4px;">142</strong>
+      </div>
+      <div class="status-pill" style="color:var(--status-warning); border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.12);" title="Active on-going investigations and patrols">
+        <i class="fa-solid fa-hourglass-half"></i> On-Going: <strong id="headerOngoingCases" style="font-family:var(--font-mono); margin-left:4px;">318</strong>
+      </div>
+      <div class="status-pill">
+        <span class="pulse-dot"></span>
+        <span id="telemetryStatus">LIVE SYSTEM ACTIVE</span>
+      </div>
+      <div class="header-clock" id="istClock">
+        --:--:-- IST
+      </div>
+    </div>
+
+    <!-- Quick Hackathon Demo Triggers -->
+    <div class="header-actions">
+      <button class="btn-tactical" onclick="openFirModal()">
+        <i class="fa-solid fa-plus-circle"></i> Log Live FIR
+      </button>
+      <button class="btn-danger-outline" onclick="triggerQuickSosDemo()">
+        <i class="fa-solid fa-tower-broadcast"></i> Test 112 SOS CAD
+      </button>
+      <button class="btn-tactical" onclick="openSitRepModal()">
+        <i class="fa-solid fa-file-shield"></i> Daily SitRep
+      </button>
+      <button class="btn-tactical" style="border-color:#3b82f6;" onclick="openAdminModal()" title="Authorized Police Officers Only">
+        <i class="fa-solid fa-user-shield"></i> C4I Officer Portal
+      </button>
+    </div>
+  </header>
+
+  <!-- ROLLING REAL-TIME TICKER -->
+  <div class="live-ticker-bar">
+    <div class="ticker-label">
+      <i class="fa-solid fa-bullhorn"></i> C4I DISPATCH TICKER
+    </div>
+    <div class="ticker-scroll" id="tickerText">
+      [112 EMERGENCY] PCR-01 on continuous vigil at Goubert Ave Promenade • [SURVEILLANCE] 20 of 22 Smart CCTVs streaming • [AI ALERT] Heightened risk predicted near Sunday Market (MG Road) after 19:00 hrs • [INFRASTRUCTURE] PWD Dark Spot Ticket #PWD-ELEC-2026-871 in review for New Bus Stand strip • [TRAFFIC] ECR Toll Interceptor operational.
+    </div>
+  </div>
+
+  <!-- NAVIGATION TABS (M - A - P - P) -->
+  <nav class="c4i-tabs">
+    <button class="tab-btn active" onclick="switchTab('map-tab')">
+      <i class="fa-solid fa-map-location-dot"></i> 1. MAP (Geospatial Intel)
+      <span class="tab-badge" id="incidentCounterBadge">1,250</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('analyse-tab')">
+      <i class="fa-solid fa-chart-line"></i> 2. ANALYSE (Crime Patterns)
+      <span class="tab-badge">4 Charts</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('predict-tab')">
+      <i class="fa-solid fa-brain"></i> 3. PREDICT (AI Risk Engine)
+      <span class="tab-badge">ML 24H</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('prevent-tab')">
+      <i class="fa-solid fa-route"></i> 4. PREVENT (CAD & Dispatch)
+      <span class="tab-badge">Routing</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('awareness-tab')">
+      <i class="fa-solid fa-hand-holding-heart"></i> 5. AWARENESS (Helplines & Safety)
+      <span class="tab-badge" style="background:#ef4444; color:#fff;">24x7</span>
+    </button>
+  </nav>
+
+  <!-- ==================== TAB 1: MAP ==================== -->
+  <div id="map-tab" class="tab-content active">
+    <div class="map-view-container">
+      
+      <!-- Left Filter & Layer Control Sidebar -->
+      <aside class="map-sidebar">
+        <!-- Layer Switches -->
+        <div class="sidebar-panel">
+          <div class="panel-header">
+            <span><i class="fa-solid fa-layer-group"></i> Tactical Layers</span>
+          </div>
+          <div class="layer-toggle-group">
+            <label class="layer-toggle">
+              <span><i class="fa-solid fa-bullseye" style="color: #ef4444;"></i> Crime Hotspot Zones (10)</span>
+              <input type="checkbox" id="layerHotspots" checked onchange="toggleMapLayer('hotspots')">
+            </label>
+            <label class="layer-toggle">
+              <span><i class="fa-solid fa-location-pin" style="color: #3b82f6;"></i> Crime Incidents</span>
+              <input type="checkbox" id="layerIncidents" checked onchange="toggleMapLayer('incidents')">
+            </label>
+            <label class="layer-toggle">
+              <span><i class="fa-solid fa-fire" style="color: #f97316;"></i> Crime Heatmap (KDE)</span>
+              <input type="checkbox" id="layerHeatmap" checked onchange="toggleMapLayer('heatmap')">
+            </label>
+            <label class="layer-toggle">
+              <span><i class="fa-solid fa-building-shield" style="color: #3b82f6;"></i> Police Stations (12)</span>
+              <input type="checkbox" id="layerStations" checked onchange="toggleMapLayer('stations')">
+            </label>
+            <label class="layer-toggle">
+              <span><i class="fa-solid fa-car-side" style="color: #10b981;"></i> Active PCR Patrols (8)</span>
+              <input type="checkbox" id="layerPatrols" checked onchange="toggleMapLayer('patrols')">
+            </label>
+            <label class="layer-toggle">
+              <span><i class="fa-solid fa-video" style="color: #06b6d4;"></i> CCTV Network (22)</span>
+              <input type="checkbox" id="layerCctv" checked onchange="toggleMapLayer('cctv')">
+            </label>
+            <label class="layer-toggle">
+              <span><i class="fa-solid fa-lightbulb" style="color: #eab308;"></i> Unlit Dark Spots (7)</span>
+              <input type="checkbox" id="layerDarkSpots" checked onchange="toggleMapLayer('darkspots')">
+            </label>
+          </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="sidebar-panel">
+          <div class="panel-header">
+            <span><i class="fa-solid fa-filter"></i> Spatio-Temporal Filters</span>
+            <button class="btn-basemap" onclick="resetFilters()">Reset</button>
+          </div>
+
+          <label class="slider-label">Police Station Jurisdiction</label>
+          <select id="filterStation" class="filter-select" onchange="applyFilters()">
+            <option value="All">All Jurisdictions (UT-Wide)</option>
+            <option value="Grand Bazaar Police Station">Grand Bazaar (Town)</option>
+            <option value="Muthialpet Police Station">Muthialpet</option>
+            <option value="Lawspet Police Station">Lawspet</option>
+            <option value="Orleanpet Police Station">Orleanpet (Bus Stand)</option>
+            <option value="Mudaliarpet Police Station">Mudaliarpet</option>
+            <option value="Reddiarpalayam Police Station">Reddiarpalayam</option>
+            <option value="D'Nagar Police Station">D'Nagar (JIPMER)</option>
+            <option value="Villianur Police Station">Villianur</option>
+            <option value="Ariyankuppam Police Station">Ariyankuppam</option>
+            <option value="Kalapet Police Station">Kalapet (Univ)</option>
+            <option value="Bahour Police Station">Bahour</option>
+            <option value="Coastal & Marine Police Station">Coastal & Marine</option>
+          </select>
+
+          <label class="slider-label">Crime Category</label>
+          <select id="filterCategory" class="filter-select" onchange="applyFilters()">
+            <option value="All">All Crime Categories</option>
+            <option value="Two-Wheeler Theft & Snatching">Two-Wheeler Theft & Snatching</option>
+            <option value="Night House Burglary & Trespass">Night House Burglary & Trespass</option>
+            <option value="Tourist Harassment & Women Safety">Tourist Harassment & Women Safety</option>
+            <option value="Alcohol-Fueled Brawl & Assault">Alcohol-Fueled Brawl & Assault</option>
+            <option value="Traffic Rash Driving & Hit-and-Run">Traffic Rash Driving & Hit-and-Run</option>
+            <option value="Narcotics (NDPS) Trafficking & Peddling">Narcotics (NDPS) Trafficking</option>
+            <option value="Cyber Crime & Financial Phishing">Cyber Crime & Financial Phishing</option>
+            <option value="Commercial Extortion & Shop Vandalism">Commercial Extortion</option>
+          </select>
+
+          <label class="slider-label">Severity Level</label>
+          <select id="filterSeverity" class="filter-select" onchange="applyFilters()">
+            <option value="All">All Severity Levels</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+          </select>
+
+          <!-- Time of Day Slider -->
+          <div class="time-slider-container">
+            <div class="slider-label">
+              <span>Time Window</span>
+              <span id="timeSliderVal" style="color: var(--accent-cyan);">00:00 - 23:59 (Full Day)</span>
+            </div>
+            <input type="range" id="hourSlider" class="styled-slider" min="0" max="23" value="23" oninput="onHourSliderChange(this.value)">
+            <div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-dim); margin-top:2px;">
+              <span>00h Midnight</span>
+              <span>12h Noon</span>
+              <span>23h Night</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Demo Presets for Jury Presentation -->
+        <div class="sidebar-panel">
+          <div class="panel-header">
+            <span><i class="fa-solid fa-play"></i> Hackathon Demo Scenarios</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <button class="btn-sim-preset" onclick="loadDemoScenario('promenade')">
+              🏖️ 1. Weekend Beach Promenade Influx
+            </button>
+            <button class="btn-sim-preset" onclick="loadDemoScenario('burglary')">
+              🏠 2. Suburb Night Burglary Spree
+            </button>
+            <button class="btn-sim-preset" onclick="loadDemoScenario('ecr')">
+              ⚡ 3. ECR Midnight Drag & NDPS Check
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Map Display Area -->
+      <main class="map-canvas-area">
+        <div id="leafletMap"></div>
+
+        <!-- Floating Map Style Toggles -->
+        <div class="map-floating-panel">
+          <div class="map-basemap-selector">
+            <button class="btn-basemap active" id="btnBaseDark" onclick="setBasemap('dark')">
+              <i class="fa-solid fa-moon"></i> Dark Tactical
+            </button>
+            <button class="btn-basemap" id="btnBaseOsm" onclick="setBasemap('osm')">
+              <i class="fa-solid fa-map"></i> OpenStreetMap
+            </button>
+            <button class="btn-basemap" id="btnBaseSat" onclick="setBasemap('satellite')">
+              <i class="fa-solid fa-satellite"></i> Satellite
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom Telemetry Card -->
+        <div class="map-bottom-telemetry">
+          <div class="telemetry-item">
+            <span class="label">Mapped Incidents</span>
+            <span class="val" id="mapStatIncidents">1,250</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">Website Filed</span>
+            <span class="val" style="color: var(--accent-cyan);" id="mapStatWebCases">142 Cases</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">On-Going Cases</span>
+            <span class="val" style="color: var(--status-warning);" id="mapStatOngoingCases">318 Active</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">Active Patrol Units</span>
+            <span class="val" style="color: var(--status-safe);">8 PCR Vans</span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">CAD SOS Mode</span>
+            <span class="val" style="color: var(--accent-cyan);">Click Map to Dispatch</span>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== TAB 2: ANALYSE ==================== -->
+  <div id="analyse-tab" class="tab-content">
+    <div class="analytics-container">
+      
+      <!-- Top KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="border-color: rgba(6, 182, 212, 0.4); background: linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(22,32,51,1) 100%);">
+          <div class="kpi-icon blue"><i class="fa-solid fa-laptop-code"></i></div>
+          <div class="kpi-info">
+            <h4>Cases Filed via Website</h4>
+            <div class="kpi-value" style="color: var(--accent-cyan);" id="kpiWebCases">142</div>
+            <div class="kpi-subtitle">Direct citizen e-FIRs & portal complaints</div>
+          </div>
+        </div>
+
+        <div class="kpi-card" style="border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(22,32,51,1) 100%);">
+          <div class="kpi-icon purple" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div class="kpi-info">
+            <h4>On-Going Active Cases</h4>
+            <div class="kpi-value" style="color: #fbbf24;" id="kpiOngoingCases">318</div>
+            <div class="kpi-subtitle">Under active investigation & tactical patrol</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon blue"><i class="fa-solid fa-folder-closed"></i></div>
+          <div class="kpi-info">
+            <h4>Total Recorded FIRs</h4>
+            <div class="kpi-value" id="kpiTotal">1,250</div>
+            <div class="kpi-subtitle">Last 90 days across Puducherry UT</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon green"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="kpi-info">
+            <h4>Resolution Rate</h4>
+            <div class="kpi-value" id="kpiResolved">81.4%</div>
+            <div class="kpi-subtitle">Chargesheeted / Arrested / Closed</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="kpi-info">
+            <h4>Critical Incidents</h4>
+            <div class="kpi-value" id="kpiCritical">248</div>
+            <div class="kpi-subtitle">NDPS, Burglaries, High Assaults</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon purple"><i class="fa-solid fa-stopwatch-20"></i></div>
+          <div class="kpi-info">
+            <h4>Mean Response Time</h4>
+            <div class="kpi-value" id="kpiResponse">8.6 Min</div>
+            <div class="kpi-subtitle">CAD 112 Dispatch to On-Scene</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts 2x2 Grid -->
+      <div class="charts-grid">
+        <!-- 24-Hour Distribution -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-clock"></i> Diurnal Crime Curve (24-Hour Cycle)</h3>
+            <span style="font-size:0.72rem; color:var(--text-dim);">Identifies peak night vulnerability windows</span>
+          </div>
+          <div class="chart-canvas-wrapper">
+            <canvas id="chartHourly"></canvas>
+          </div>
+        </div>
+
+        <!-- Day of Week Distribution -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-calendar-days"></i> Day-of-Week Frequency (Surge Analytics)</h3>
+            <span style="font-size:0.72rem; color:var(--text-dim);">Weekend tourist spike vs Weekday</span>
+          </div>
+          <div class="chart-canvas-wrapper">
+            <canvas id="chartDow"></canvas>
+          </div>
+        </div>
+
+        <!-- Crime Typology Distribution -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-chart-pie"></i> Crime Typology Breakdown</h3>
+            <span style="font-size:0.72rem; color:var(--text-dim);">Classification by IPC / BNS categories</span>
+          </div>
+          <div class="chart-canvas-wrapper">
+            <canvas id="chartCategory"></canvas>
+          </div>
+        </div>
+
+        <!-- Station-wise Leaderboard -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-ranking-star"></i> Police Station Jurisdictional Load</h3>
+            <span style="font-size:0.72rem; color:var(--text-dim);">Incident volume per station</span>
+          </div>
+          <div class="chart-canvas-wrapper">
+            <canvas id="chartStations"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spatial Insights Row -->
+      <div class="insights-row">
+        <!-- Infrastructure Dark Spot Correlation -->
+        <div class="insight-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-lightbulb" style="color: #eab308;"></i> Infrastructure Lighting vs Street Crime Correlation</h3>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">
+            Empirical spatial analysis shows that <strong>68.4% of after-dark snatching and harassment cases</strong> occur within 150 meters of municipal dark spots with illuminance &lt; 3.0 Lux.
+          </p>
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Vulnerable Corridor</th>
+                <th>Illuminance</th>
+                <th>Primary Incident Type</th>
+                <th>Risk Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>New Bus Stand Rear Canal Walkway</td>
+                <td><span style="color:#ef4444; font-family:var(--font-mono);">1.8 Lux</span></td>
+                <td>NDPS & Night Robbery</td>
+                <td><span class="sector-risk-badge risk-CRITICAL">CRITICAL</span></td>
+              </tr>
+              <tr>
+                <td>ECR Kanagachettikulam Beach Strip</td>
+                <td><span style="color:#ef4444; font-family:var(--font-mono);">1.2 Lux</span></td>
+                <td>Contraband & Harassment</td>
+                <td><span class="sector-risk-badge risk-CRITICAL">CRITICAL</span></td>
+              </tr>
+              <tr>
+                <td>Rue Suffren - Dumas Connecting Alley</td>
+                <td><span style="color:#f59e0b; font-family:var(--font-mono);">4.2 Lux</span></td>
+                <td>Tourist Bag Snatching</td>
+                <td><span class="sector-risk-badge risk-HIGH">HIGH</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Modus Operandi Pattern Analysis -->
+        <div class="insight-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-fingerprint" style="color: #06b6d4;"></i> Modus Operandi (MO) Pattern Clusters</h3>
+          </div>
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Pattern Name</th>
+                <th>Time Window</th>
+                <th>Target Demographics</th>
+                <th>Repeat Suspect Profile</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>2-Wheeler Chain Snatching Duo</td>
+                <td>18:30 - 21:00</td>
+                <td>Pedestrian tourists on Goubert Ave & MG Rd</td>
+                <td>Bajaj Pulsar / Yamaha FZ (Pondy/TN border)</td>
+              </tr>
+              <tr>
+                <td>Midnight House Break-in Syndicate</td>
+                <td>01:30 - 04:00</td>
+                <td>Locked residential villas in Lawspet</td>
+                <td>Lever iron cutter & silent trespass</td>
+              </tr>
+              <tr>
+                <td>ECR Weekend High-Speed Convoy</td>
+                <td>23:30 - 02:00</td>
+                <td>Young drivers along coastal highway</td>
+                <td>Modified vehicles & drag racing groups</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== TAB 3: PREDICT ==================== -->
+  <div id="predict-tab" class="tab-content">
+    <div class="predict-container">
+      
+      <!-- Top Bar -->
+      <div class="predict-header-bar">
+        <div>
+          <h2><i class="fa-solid fa-brain" style="color: var(--accent-cyan);"></i> Machine Learning Spatio-Temporal Risk Forecasting</h2>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+            Ensemble Random Forest & Poisson Spatio-Temporal Model calibrated for Puducherry sectors
+          </p>
+        </div>
+        <div class="predict-controls">
+          <label style="font-size:0.8rem; color:var(--text-muted);">Forecast Hour:</label>
+          <select id="predictHour" class="filter-select" style="width:110px; margin:0;" onchange="refreshPredictions()">
+            <option value="22" selected>22:00 (Night)</option>
+            <option value="20">20:00 (Eve)</option>
+            <option value="2">02:00 (Early)</option>
+            <option value="12">12:00 (Noon)</option>
+            <option value="16">16:00 (Aft)</option>
+          </select>
+          <label style="font-size:0.8rem; color:var(--text-muted);">Day:</label>
+          <select id="predictDow" class="filter-select" style="width:130px; margin:0;" onchange="refreshPredictions()">
+            <option value="5" selected>Saturday (Weekend)</option>
+            <option value="6">Sunday (Weekend)</option>
+            <option value="4">Friday</option>
+            <option value="2">Wednesday</option>
+          </select>
+          <button class="btn-tactical" onclick="refreshPredictions()">
+            <i class="fa-solid fa-rotate"></i> Recalculate
+          </button>
+        </div>
+      </div>
+
+      <!-- What-If Scenario Simulator Box -->
+      <div class="simulation-box">
+        <div class="sim-header">
+          <h3><i class="fa-solid fa-sliders"></i> "What-If" Tactical Scenario Simulator</h3>
+          <span style="font-size:0.75rem; color:var(--accent-cyan);">Simulate crowd surges, lighting failures, or patrol reinforcement</span>
+        </div>
+        
+        <div class="sim-presets">
+          <button class="btn-sim-preset active" id="btnSim1" onclick="runSimulation('weekend_tourist_surge', this)">
+            🏖️ Scenario A: Weekend Tourist Influx (+70% Beach Footfall)
+          </button>
+          <button class="btn-sim-preset" id="btnSim2" onclick="runSimulation('night_burglary_spree', this)">
+            🌧️ Scenario B: Monsoon Power Cut (80% Dark Spot Spike)
+          </button>
+          <button class="btn-sim-preset" id="btnSim3" onclick="runSimulation('ecr_midnight_speeding', this)">
+            🏎️ Scenario C: ECR Weekend Drag Racing & NDPS Corridor
+          </button>
+          <button class="btn-sim-preset" id="btnSim4" onclick="runSimulation('enhanced_saturation_patrol', this)">
+            🛡️ Scenario D: Operation Suraksha (60% Patrol Reinforcement)
+          </button>
+        </div>
+
+        <!-- Simulation Result Banner -->
+        <div id="simResultBanner" style="background:rgba(0,0,0,0.3); border-radius:6px; padding:12px; font-size:0.82rem; border-left:4px solid var(--accent-cyan);">
+          <strong>Simulation Mode:</strong> <span id="simBannerTitle">Weekend Tourist & Promenade Rush</span><br>
+          <span id="simBannerDesc" style="color:var(--text-muted);">Simulating +70% footfall in White Town and Promenade beach areas during Saturday night.</span>
+        </div>
+      </div>
+
+      <!-- 24-Hour Citywide Risk Forecast Trend -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3><i class="fa-solid fa-chart-area"></i> 24-Hour Forward Crime Probability Curve</h3>
+          <span style="font-size:0.72rem; color:var(--text-dim);">Citywide baseline risk vs highest danger sector</span>
+        </div>
+        <div class="chart-canvas-wrapper" style="height: 220px;">
+          <canvas id="chartForecast"></canvas>
+        </div>
+      </div>
+
+      <!-- 12 Sector Risk Cards Grid -->
+      <div>
+        <h3 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-map-pin"></i> Tactical Sector Risk Matrix (Puducherry UT)
+        </h3>
+        <div class="sector-grid" id="sectorRiskGrid">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== TAB 4: PREVENT ==================== -->
+  <div id="prevent-tab" class="tab-content">
+    <div class="prevent-container">
+      
+      <!-- Patrol Route Optimization (Decision Support) -->
+      <div class="prevent-card">
+        <div class="prevent-card-header">
+          <h3><i class="fa-solid fa-route" style="color: var(--accent-cyan);"></i> Dynamic Patrol Route Optimizer</h3>
+          <span style="font-size:0.72rem; color:var(--status-safe);"><i class="fa-solid fa-circle-check"></i> TSP Algorithm</span>
+        </div>
+        
+        <p style="font-size:0.8rem; color:var(--text-muted);">
+          Calculates the optimal deterrent circuit connecting the highest-risk predicted sectors and unlit dark spots for maximum prevention coverage.
+        </p>
+
+        <div style="display:flex; gap:10px; align-items:center;">
+          <select id="selectPatrolUnit" class="filter-select" style="margin:0;">
+            <option value="PCR-01">PCR-01 (Promenade Falcon - Bolero)</option>
+            <option value="PCR-02">PCR-02 (Boulevard Eagle - Xenon)</option>
+            <option value="PCR-03">PCR-03 (Transit Guardian - Scorpio)</option>
+            <option value="PCR-04">PCR-04 (North Hawk - Lawspet)</option>
+            <option value="PCR-05">PCR-05 (Coastal Interceptor - ECR)</option>
+            <option value="PCR-08">PCR-08 (University Cheetah - Pulsar)</option>
+          </select>
+          <button class="btn-tactical" onclick="generateOptimalPatrolRoute()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generate Route
+          </button>
+        </div>
+
+        <!-- Route Summary Cards -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px;">
+          <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+            <div style="font-size:0.7rem; color:var(--text-dim);">TOTAL CIRCUIT DISTANCE</div>
+            <div style="font-size:1.2rem; font-weight:700; color:#fff; font-family:var(--font-mono);" id="routeDist">14.6 km</div>
+          </div>
+          <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border:1px solid var(--border-color);">
+            <div style="font-size:0.7rem; color:var(--text-dim);">ESTIMATED PATROL TIME</div>
+            <div style="font-size:1.2rem; font-weight:700; color:var(--accent-cyan); font-family:var(--font-mono);" id="routeTime">115 Mins</div>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Waypoint Itinerary -->
+        <div class="itinerary-list" id="routeItinerary">
+          <!-- Populated by JS -->
+        </div>
+
+        <button class="btn-tactical" style="width:100%; justify-content:center;" onclick="showPatrolRouteOnMap()">
+          <i class="fa-solid fa-map"></i> View & Track Patrol Circuit on Map
+        </button>
+      </div>
+
+      <!-- CAD 112 Emergency Dispatch Console -->
+      <div class="prevent-card">
+        <div class="prevent-card-header">
+          <h3><i class="fa-solid fa-truck-medical" style="color: #ef4444;"></i> 112 CAD Emergency Dispatch Simulator</h3>
+          <span style="font-size:0.72rem; color:#f87171;"><i class="fa-solid fa-satellite-dish"></i> Live GPS Telemetry</span>
+        </div>
+
+        <p style="font-size:0.8rem; color:var(--text-muted);">
+          Simulates real-time 112 emergency calls in Puducherry. The Computer-Aided Dispatch (CAD) engine identifies the closest mobile patrol unit, calculates ETA, and streams turn-by-turn dispatch.
+        </p>
+
+        <div class="cad-console">
+          <div class="form-group">
+            <label>Emergency Incident Type</label>
+            <select id="cadIncidentType" class="filter-select" style="margin:0;">
+              <option value="Armed Bag Snatching at Promenade Beach">Armed Bag Snatching at Promenade Beach (White Town)</option>
+              <option value="House Burglary in Progress at Lawspet">House Burglary in Progress at Lawspet (Airport Rd)</option>
+              <option value="Drunken Violent Brawl outside New Bus Stand">Drunken Violent Brawl outside New Bus Stand</option>
+              <option value="ECR Road Collision & Hit-and-Run">ECR Road Collision & Hit-and-Run near Muthialpet</option>
+              <option value="Eve-teasing & Stalking on Chunnambar Rd">Eve-teasing & Stalking on Chunnambar Rd</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Emergency Location Coordinates</label>
+            <div style="display:flex; gap:10px;">
+              <input type="text" id="cadLat" class="form-input" value="11.9328" style="flex:1;" placeholder="Latitude">
+              <input type="text" id="cadLng" class="form-input" value="79.8352" style="flex:1;" placeholder="Longitude">
+              <button class="btn-tactical" onclick="setCadCoordinatesFromPreset()">Preset</button>
+            </div>
+            <span style="font-size:0.7rem; color:var(--text-dim); margin-top:2px;">
+              Tip: You can also click directly anywhere on the map in Tab 1 to dispatch to that exact point!
+            </span>
+          </div>
+
+          <button class="btn-danger-outline" style="padding:12px; font-size:0.9rem; justify-content:center;" onclick="executeCadDispatch()">
+            <i class="fa-solid fa-bolt-lightning"></i> Dispatch Nearest Patrol Unit Now
+          </button>
+
+          <!-- Dispatch Result Card -->
+          <div class="cad-result-card" id="cadResult">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-weight:700; color:#fff;" id="cadDispatchedCallsign">PCR-01 (Promenade Falcon)</span>
+              <span style="background:rgba(16,185,129,0.2); color:#34d399; font-size:0.75rem; padding:2px 8px; border-radius:4px; font-weight:bold;">DISPATCHED</span>
+            </div>
+            <div style="font-size:0.78rem; color:var(--text-muted); display:flex; flex-direction:column; gap:4px;">
+              <div><strong>Vehicle:</strong> <span id="cadVehicle">Mahindra Bolero 4WD</span></div>
+              <div><strong>Officer in Command:</strong> <span id="cadOfficer">SI Arumugam</span></div>
+              <div><strong>Distance to Incident:</strong> <span id="cadDist" style="color:#fff; font-family:var(--font-mono);">0.42 km</span></div>
+              <div><strong>Estimated Response ETA:</strong> <span id="cadEta" style="color:var(--accent-cyan); font-weight:bold; font-size:1.1rem; font-family:var(--font-mono);">3 mins</span></div>
+              <div><strong>Backup Unit Alerted:</strong> <span id="cadBackup">PCR-02 (Boulevard Eagle)</span></div>
+            </div>
+            <button class="btn-tactical" style="margin-top:12px; width:100%; justify-content:center;" onclick="switchTab('map-tab')">
+              <i class="fa-solid fa-location-arrow"></i> Track Live Intercept on Map
+            </button>
+          </div>
+        </div>
+
+        <!-- Infrastructure Remediation List -->
+        <div style="margin-top:10px; border-top:1px solid var(--border-color); padding-top:14px;">
+          <h4 style="font-size:0.85rem; color:#fff; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <i class="fa-solid fa-screwdriver-wrench" style="color: #eab308;"></i> Infrastructure Remediation (PWD Liaison)
+          </h4>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">
+            High-priority electrical tickets filed directly from CRIMEMAP to PWD Electrical Division:
+          </p>
+          <div style="font-size:0.75rem; color:#cbd5e1; display:flex; flex-direction:column; gap:6px;">
+            <div style="background:rgba(15,23,42,0.6); padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+              <span>Ticket #PWD-ELEC-2026-871: New Bus Stand Canal Walkway (1.8 Lux)</span>
+              <span style="color:#f87171; font-weight:bold;">PENDING PWD</span>
+            </div>
+            <div style="background:rgba(15,23,42,0.6); padding:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+              <span>Ticket #PWD-ELEC-2026-840: ECR Kanagachettikulam Dark Stretch</span>
+              <span style="color:#f87171; font-weight:bold;">PENDING PWD</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== TAB 5: AWARENESS & HELPLINES ==================== -->
+  <div id="awareness-tab" class="tab-content">
+    <div class="analytics-container">
+      
+      <!-- Awareness Header Banner -->
+      <div class="predict-header-bar" style="border-left: 5px solid #ef4444;">
+        <div>
+          <h2 style="color:#fff;"><i class="fa-solid fa-hand-holding-heart" style="color: #ef4444;"></i> NammaGuard Citizen Awareness & Emergency Directory</h2>
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
+            24x7 Government of Puducherry Emergency Helplines, Cyber Fraud Advisory & Public Safety Guidelines
+          </p>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <a href="tel:112" class="btn-danger-outline" style="text-decoration:none; padding:8px 16px; font-size:0.85rem; font-weight:bold;">
+            <i class="fa-solid fa-phone-volume"></i> Speed Dial 112
+          </a>
+          <a href="tel:1930" class="btn-tactical" style="text-decoration:none; padding:8px 16px; font-size:0.85rem; font-weight:bold;">
+            <i class="fa-solid fa-shield-virus"></i> Cyber Fraud 1930
+          </a>
+        </div>
+      </div>
+
+      <!-- Emergency Helpline Grid -->
+      <div>
+        <h3 style="font-size:0.95rem; font-weight:700; color:#fff; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <i class="fa-solid fa-phone-flip" style="color:var(--accent-cyan);"></i> Official 24x7 Emergency Helplines (Puducherry & National)
+        </h3>
+        <div class="kpi-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+          
+          <!-- Helpline 1: 112 -->
+          <div class="kpi-card" style="border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(22,32,51,1) 100%);">
+            <div class="kpi-icon red"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>National Unified Emergency (ERSS)</h4>
+              <div class="kpi-value" style="color:#ef4444; font-size:1.8rem;">112</div>
+              <div class="kpi-subtitle">Police, Fire & Ambulance Integration</div>
+              <a href="tel:112" class="btn-danger-outline" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Call 112 Now
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 2: Cyber 1930 -->
+          <div class="kpi-card" style="border-color: rgba(6, 182, 212, 0.4); background: linear-gradient(135deg, rgba(6,182,212,0.1) 0%, rgba(22,32,51,1) 100%);">
+            <div class="kpi-icon blue"><i class="fa-solid fa-laptop-medical"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Cyber Fraud & Financial Phishing</h4>
+              <div class="kpi-value" style="color:var(--accent-cyan); font-size:1.8rem;">1930</div>
+              <div class="kpi-subtitle">Freeze bank accounts in Golden Hour</div>
+              <a href="tel:1930" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Report Fraud 1930
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 3: Women 1091 / 181 -->
+          <div class="kpi-card" style="border-color: rgba(244, 114, 182, 0.4); background: linear-gradient(135deg, rgba(244,114,182,0.1) 0%, rgba(22,32,51,1) 100%);">
+            <div class="kpi-icon purple" style="background: rgba(244,114,182,0.15); color:#f472b6;"><i class="fa-solid fa-person-dress"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Women in Distress Helpline</h4>
+              <div class="kpi-value" style="color:#f472b6; font-size:1.8rem;">1091 / 181</div>
+              <div class="kpi-subtitle">Puducherry Pink Patrol & Anti-Eve Teasing</div>
+              <a href="tel:1091" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none; background:#db2777; border-color:#f472b6;">
+                <i class="fa-solid fa-phone"></i> Call Women Helpline
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 4: Childline 1098 -->
+          <div class="kpi-card" style="border-color: rgba(251, 146, 60, 0.4); background: linear-gradient(135deg, rgba(251,146,60,0.1) 0%, rgba(22,32,51,1) 100%);">
+            <div class="kpi-icon red" style="background: rgba(251,146,60,0.15); color:#fb923c;"><i class="fa-solid fa-child"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Childline Emergency Service</h4>
+              <div class="kpi-value" style="color:#fb923c; font-size:1.8rem;">1098</div>
+              <div class="kpi-subtitle">Child Abuse, Protection & Missing Children</div>
+              <a href="tel:1098" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none; background:#ea580c; border-color:#fb923c;">
+                <i class="fa-solid fa-phone"></i> Call Childline 1098
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 5: Tourist Police 1363 -->
+          <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="fa-solid fa-umbrella-beach"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Tourist Police Puducherry</h4>
+              <div class="kpi-value" style="color:#60a5fa; font-size:1.8rem;">1363</div>
+              <div class="kpi-subtitle">Promenade, White Town & Heritage Help</div>
+              <a href="tel:1363" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Call 1363
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 6: Coastal Security 1093 -->
+          <div class="kpi-card">
+            <div class="kpi-icon blue"><i class="fa-solid fa-anchor"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Coastal & Marine Security</h4>
+              <div class="kpi-value" style="color:#38bdf8; font-size:1.8rem;">1093</div>
+              <div class="kpi-subtitle">Beach Drowning, Marine Distress & Smuggling</div>
+              <a href="tel:1093" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Call 1093
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 7: Senior Citizens 14567 -->
+          <div class="kpi-card">
+            <div class="kpi-icon green"><i class="fa-solid fa-hands-holding"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Senior Citizen Elderline</h4>
+              <div class="kpi-value" style="color:#34d399; font-size:1.8rem;">14567</div>
+              <div class="kpi-subtitle">Elder Abuse, Legal & Medical Guidance</div>
+              <a href="tel:14567" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Call 14567
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 8: Anti-Drug / Narcotics 1933 -->
+          <div class="kpi-card">
+            <div class="kpi-icon purple"><i class="fa-solid fa-ban"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>MANAS Anti-Narcotics Helpline</h4>
+              <div class="kpi-value" style="color:#c084fc; font-size:1.8rem;">1933</div>
+              <div class="kpi-subtitle">Report Drug Peddling & Contraband</div>
+              <a href="tel:1933" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Call 1933
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 9: Medical Ambulance 108 -->
+          <div class="kpi-card">
+            <div class="kpi-icon red"><i class="fa-solid fa-truck-medical"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Ambulance Emergency</h4>
+              <div class="kpi-value" style="color:#f87171; font-size:1.8rem;">108</div>
+              <div class="kpi-subtitle">24x7 Critical Medical Assistance</div>
+              <a href="tel:108" class="btn-danger-outline" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Call 108
+              </a>
+            </div>
+          </div>
+
+          <!-- Helpline 10: Traffic Police 103 -->
+          <div class="kpi-card">
+            <div class="kpi-icon green"><i class="fa-solid fa-traffic-light"></i></div>
+            <div class="kpi-info" style="flex:1;">
+              <h4>Puducherry Traffic Police</h4>
+              <div class="kpi-value" style="color:#10b981; font-size:1.8rem;">103</div>
+              <div class="kpi-subtitle">Accident Reporting & Congestion: 0413-2231333</div>
+              <a href="tel:103" class="btn-tactical" style="margin-top:8px; display:inline-flex; padding:4px 10px; font-size:0.75rem; text-decoration:none;">
+                <i class="fa-solid fa-phone"></i> Call 103
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Public Safety Advisories Grid -->
+      <div class="charts-grid" style="margin-top:10px;">
+        
+        <!-- Advisory 1: Cyber Crime Prevention -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-shield-halved" style="color:var(--accent-cyan);"></i> Cyber Fraud Advisory: Top 4 Scams & Prevention</h3>
+          </div>
+          <div style="font-size:0.8rem; color:#cbd5e1; display:flex; flex-direction:column; gap:10px; line-height:1.5;">
+            <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border-left:3px solid #ef4444;">
+              <strong style="color:#f87171;">1. Digital Arrest Fraud:</strong> Scammers pose as CBI/Customs officials on Skype/WhatsApp video calls claiming your Aadhaar is linked to drugs. <strong style="color:#fff;">Law enforcement NEVER arrests citizens over video calls!</strong> Hang up immediately.
+            </div>
+            <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border-left:3px solid #f97316;">
+              <strong style="color:#fb923c;">2. Fake Electricity Bill / APK Links:</strong> SMS stating your power will be cut tonight unless you download an APK. These APKs install remote screen-share malware that empties bank accounts.
+            </div>
+            <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border-left:3px solid #eab308;">
+              <strong style="color:#fde047;">3. Part-Time Hotel Rating / YouTube Likes Scam:</strong> Initial payouts of Rs. 200, followed by demands for lakhs in crypto/VIP deposits.
+            </div>
+            <div style="background:rgba(6,182,212,0.15); border:1px solid var(--accent-cyan); padding:10px; border-radius:6px; color:#fff;">
+              <strong style="color:var(--accent-cyan);"><i class="fa-solid fa-bolt"></i> The Golden Hour Rule:</strong> If you are defrauded, dial <strong style="color:#ef4444; font-size:1rem;">1930</strong> immediately. Reporting within 2 hours enables Indian Cyber Crime Coordination Centre (I4C) to freeze fraudulent bank transfers before withdrawal.
+            </div>
+          </div>
+        </div>
+
+        <!-- Advisory 2: Women, Child & Tourist Safety -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3><i class="fa-solid fa-person-shelter" style="color:#f472b6;"></i> Women, Child & Tourist Safety Advisory</h3>
+          </div>
+          <div style="font-size:0.8rem; color:#cbd5e1; display:flex; flex-direction:column; gap:10px; line-height:1.5;">
+            <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border-left:3px solid #f472b6;">
+              <strong style="color:#f472b6;">Puducherry Pink Patrol Squads:</strong> Dedicated all-women police teams patrol Promenade Beach, bus stands, and college clusters. Dial <strong style="color:#fff;">1091</strong> for immediate mobile assistance.
+            </div>
+            <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border-left:3px solid #06b6d4;">
+              <strong style="color:#06b6d4;">Rock Beach Safety Caution:</strong> Due to heavy tidal undercurrents and submerged basalt boulders, swimming along Goubert Avenue is strictly prohibited and dangerous.
+            </div>
+            <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border-left:3px solid #10b981;">
+              <strong style="color:#10b981;">Authorized Rental Two-Wheelers:</strong> Rent only yellow-number-plate commercial bikes from government-registered agencies. Always wear BIS helmets (mandatory across Puducherry UT).
+            </div>
+            <div style="background:rgba(15,23,42,0.6); padding:10px; border-radius:6px; border-left:3px solid #a855f7;">
+              <strong style="color:#a855f7;">Child Protection:</strong> Any case of child harassment, unattended children near beaches, or child labor should be immediately reported to <strong style="color:#fff;">1098</strong>.
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== FLOATING COP-AI CHATBOT ==================== -->
+  <button class="copilot-floating-btn" onclick="toggleCopilot()" title="Ask Puducherry CopAI Assistant">
+    <i class="fa-solid fa-robot"></i>
+  </button>
+
+  <div class="copilot-drawer" id="copilotDrawer">
+    <div class="copilot-header">
+      <h4><i class="fa-solid fa-shield-halved" style="color: var(--accent-cyan);"></i> Puducherry CopAI Assistant</h4>
+      <button class="btn-close" onclick="toggleCopilot()">&times;</button>
+    </div>
+    <div class="copilot-messages" id="copilotMessages">
+      <div class="chat-bubble assistant">
+        <strong>Puducherry Police AI Intelligence Officer:</strong><br>
+        Greetings Officer! I am your real-time geospatial assistant. You can ask me:
+        <ul style="margin: 6px 0 0 16px; font-size:0.75rem;">
+          <li>"Where should we deploy extra patrols tonight?"</li>
+          <li>"Analyze recent snatching hotspots in White Town"</li>
+          <li>"Status of dark spots near New Bus Stand"</li>
+          <li>"Tourist safety guidelines along Promenade Beach"</li>
+        </ul>
+      </div>
+    </div>
+    <div class="copilot-input-bar">
+      <input type="text" id="copilotInput" placeholder="Type tactical question..." onkeypress="if(event.key==='Enter') sendCopilotQuery()">
+      <button class="btn-tactical" onclick="sendCopilotQuery()">
+        <i class="fa-solid fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: REGISTER LIVE FIR ==================== -->
+  <div class="c4i-modal" id="modalFir">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-circle-plus" style="color: var(--accent-cyan);"></i> Register Geo-Tagged Crime Incident (FIR)</h3>
+        <button class="btn-close" onclick="closeFirModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Incident Title / Description</label>
+          <input type="text" id="newFirTitle" class="form-input" placeholder="e.g. Snatching of tourist handbag near Rock Beach">
+        </div>
+        <div class="form-group">
+          <label>Crime Category</label>
+          <select id="newFirCategory" class="filter-select">
+            <option value="Two-Wheeler Theft & Snatching">Two-Wheeler Theft & Snatching (IPC 379)</option>
+            <option value="Night House Burglary & Trespass">Night House Burglary & Trespass (IPC 457)</option>
+            <option value="Tourist Harassment & Women Safety">Tourist Harassment & Women Safety (IPC 354)</option>
+            <option value="Alcohol-Fueled Brawl & Assault">Alcohol-Fueled Brawl & Assault (IPC 160)</option>
+            <option value="Traffic Rash Driving & Hit-and-Run">Traffic Rash Driving & Hit-and-Run (IPC 279)</option>
+            <option value="Narcotics (NDPS) Trafficking & Peddling">Narcotics (NDPS) Act Violation</option>
+            <option value="Cyber Crime & Financial Phishing">Cyber Crime (IT Act 66D)</option>
+          </select>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Jurisdiction Police Station</label>
+            <select id="newFirStation" class="filter-select">
+              <option value="Grand Bazaar Police Station">Grand Bazaar Police Station</option>
+              <option value="Muthialpet Police Station">Muthialpet Police Station</option>
+              <option value="Lawspet Police Station">Lawspet Police Station</option>
+              <option value="Orleanpet Police Station">Orleanpet Police Station</option>
+              <option value="Mudaliarpet Police Station">Mudaliarpet Police Station</option>
+              <option value="Villianur Police Station">Villianur Police Station</option>
+              <option value="Kalapet Police Station">Kalapet Police Station</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Severity Rating</label>
+            <select id="newFirSeverity" class="filter-select">
+              <option value="Critical">Critical (Immediate Dispatch)</option>
+              <option value="High" selected>High</option>
+              <option value="Medium">Medium</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Latitude</label>
+            <input type="text" id="newFirLat" class="form-input" value="11.9338">
+          </div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="text" id="newFirLng" class="form-input" value="79.8326">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Immediate Dispatch Directive</label>
+          <input type="text" id="newFirDesc" class="form-input" value="PCR-01 alerted. Investigating officer assigned.">
+        </div>
+        <button class="btn-tactical" style="padding:12px; font-size:0.9rem; justify-content:center;" onclick="submitNewFir()">
+          <i class="fa-solid fa-stamp"></i> Register FIR & Update Live Map
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: DAILY SITREP BRIEFING ==================== -->
+  <div class="c4i-modal" id="modalSitRep">
+    <div class="modal-content" style="max-width: 800px; background:#fff; color:#0f172a;">
+      <div class="modal-header" style="background:#0f172a; color:#fff;">
+        <h3 style="color:#fff;"><i class="fa-solid fa-file-shield" style="color: var(--accent-cyan);"></i> Official Law & Order Situation Report (SitRep)</h3>
+        <button class="btn-close" onclick="closeSitRepModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 24px; color:#0f172a;">
+        <div class="sitrep-paper">
+          <div class="sitrep-header">
+            <h2>GOVERNMENT OF PUDUCHERRY</h2>
+            <h3>POLICE DEPARTMENT • CENTRAL COMMAND & CONTROL (C4I)</h3>
+            <p style="font-size:0.85rem; color:#64748b; margin-top:4px;">
+              DAILY CRIME GEOSPATIAL INTELLIGENCE & SITUATION REPORT (SITREP)
+            </p>
+            <p style="font-size:0.8rem; font-weight:bold; color:#0f172a; margin-top:4px;" id="sitrepTimestamp">
+              Date: Current Session • Ref: PUDU-SITREP-2026-01
+            </p>
+          </div>
+
+          <div class="sitrep-section-title">I. EXECUTIVE KEY PERFORMANCE METRICS</div>
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:14px; text-align:center;">
+            <div style="border:1px solid #cbd5e1; padding:8px; border-radius:4px;">
+              <div style="font-size:0.75rem; color:#64748b;">TOTAL INCIDENTS</div>
+              <div style="font-size:1.1rem; font-weight:bold;" id="repTotal">1,250</div>
+            </div>
+            <div style="border:1px solid #cbd5e1; padding:8px; border-radius:4px;">
+              <div style="font-size:0.75rem; color:#64748b;">RESOLUTION RATE</div>
+              <div style="font-size:1.1rem; font-weight:bold; color:#16a34a;" id="repResolved">81.4%</div>
+            </div>
+            <div style="border:1px solid #cbd5e1; padding:8px; border-radius:4px;">
+              <div style="font-size:0.75rem; color:#64748b;">CRITICAL THREATS</div>
+              <div style="font-size:1.1rem; font-weight:bold; color:#dc2626;" id="repCritical">248</div>
+            </div>
+            <div style="border:1px solid #cbd5e1; padding:8px; border-radius:4px;">
+              <div style="font-size:0.75rem; color:#64748b;">MEAN CAD ETA</div>
+              <div style="font-size:1.1rem; font-weight:bold;" id="repEta">8.6 Min</div>
+            </div>
+          </div>
+
+          <div class="sitrep-section-title">II. TOP CRITICAL SECTORS (AI PREDICTIVE RISK)</div>
+          <ul style="font-size:0.85rem; line-height:1.6; margin-left:20px;" id="repSectors">
+            <li><strong>White Town & Promenade:</strong> High tourist congregation; weekend snatching alerts active.</li>
+            <li><strong>New Bus Stand Transit Belt:</strong> Dark spot DS-02 requires high-mast illumination repair.</li>
+            <li><strong>ECR Tollgate Muthialpet:</strong> Weekend night vehicle interception mandatory for NDPS & rash driving.</li>
+          </ul>
+
+          <div class="sitrep-section-title">III. STRATEGIC DIRECTIVES FROM SSP / DGP</div>
+          <ol style="font-size:0.85rem; line-height:1.6; margin-left:20px;" id="repDirectives">
+            <li>Deploy PCR-01 and PCR-02 on joint perimeter patrol along Goubert Avenue from 18:00 to 02:00.</li>
+            <li>Intensify Lawspet anti-burglary house checks during 01:30 - 04:30.</li>
+            <li>Liaison with PWD for immediate replacement of non-functional sodium lamps along New Bus Stand canal.</li>
+          </ol>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+          <button class="btn-tactical" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print Official Report
+          </button>
+          <button class="btn-danger-outline" onclick="closeSitRepModal()">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: SECURE C4I OFFICER PORTAL ==================== -->
+  <div class="c4i-modal" id="modalAdmin">
+    <div class="modal-content" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-user-shield" style="color: var(--accent-cyan);"></i> C4I Officer & Dispatch Command Portal</h3>
+        <button class="btn-close" onclick="closeAdminModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- PIN Verification Gate -->
+        <div id="adminPinGate" style="display:flex; flex-direction:column; gap:14px; text-align:center; padding:20px 10px;">
+          <div style="font-size:38px; color:var(--accent-cyan);"><i class="fa-solid fa-lock"></i></div>
+          <h4 style="color:#fff; font-size:1.05rem;">RESTRICTED LAW ENFORCEMENT ACCESS</h4>
+          <p style="font-size:0.8rem; color:var(--text-muted); max-width:440px; margin:0 auto;">
+            This console contains confidential dispatch telemetry and internal notification routing. Please enter your 4-digit Officer Security PIN.
+          </p>
+          <div style="display:flex; justify-content:center; gap:10px; margin-top:6px;">
+            <input type="password" id="adminPinInput" class="form-input" style="width:140px; text-align:center; font-size:1.2rem; letter-spacing:4px;" placeholder="••••" maxlength="8" onkeypress="if(event.key==='Enter') verifyAdminPin()">
+            <button class="btn-tactical" onclick="verifyAdminPin()">
+              <i class="fa-solid fa-key"></i> Verify PIN
+            </button>
+          </div>
+          <div id="adminPinError" style="font-size:0.75rem; color:#ef4444; display:none;">Invalid PIN. Access denied.</div>
+        </div>
+
+        <!-- Protected Admin Panel (Hidden until PIN verified) -->
+        <div id="adminSecretPanel" style="display:none; flex-direction:column; gap:14px;">
+          <div style="background: rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); padding:12px; border-radius:6px; font-size:0.8rem; color:#34d399;">
+            <i class="fa-solid fa-shield-check"></i> <strong>Officer Session Authenticated:</strong><br>
+            All Live FIRs and 112 SOS Dispatches automatically route alerts to the designated command recipient below.
+          </div>
+
+          <div class="form-group">
+            <label>Emergency Alert Recipient (Confidential Admin View)</label>
+            <input type="email" id="emailTargetInput" class="form-input" placeholder="Loading confidential email...">
+          </div>
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <div class="form-group">
+              <label>Gmail SMTP User (Optional)</label>
+              <input type="text" id="emailSmtpUserInput" class="form-input" placeholder="e.g. sender@gmail.com">
+            </div>
+            <div class="form-group">
+              <label>Gmail App Password</label>
+              <input type="password" id="emailSmtpPassInput" class="form-input" placeholder="16-character token">
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn-tactical" onclick="saveEmailConfig()">
+              <i class="fa-solid fa-floppy-disk"></i> Save Dispatch Settings
+            </button>
+            <button class="btn-danger-outline" onclick="logoutAdminSession()">
+              <i class="fa-solid fa-lock"></i> Lock Console
+            </button>
+          </div>
+
+          <div style="margin-top:14px; border-top:1px solid var(--border-color); padding-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <strong style="font-size:0.82rem; color:#fff;"><i class="fa-solid fa-list-check"></i> Confidential Transmission Logs:</strong>
+              <button class="btn-basemap" onclick="loadEmailLogs()">Refresh Logs</button>
+            </div>
+            <div id="emailLogBox" style="background:#090e1a; border:1px solid var(--border-color); border-radius:6px; padding:10px; font-family:var(--font-mono); font-size:0.7rem; color:#94a3b8; max-height:160px; overflow-y:auto; white-space:pre-wrap;">Loading secure logs...</div>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+            <button class="btn-danger-outline" onclick="closeAdminModal()">Close Window</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN JS Dependencies -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Application Controller -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
