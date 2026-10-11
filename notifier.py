@@ -1,255 +1,175 @@
-"""
-Puducherry CRIMEMAP - Real-Time Emergency Notification Engine
-Delivers real emails to siddarthssakthivel@gmail.com via FormSubmit Email API
-and direct Gmail SMTP, plus instant live push notifications.
+"""Email notifications for the CrimeMap/NammaGuard Flask backend.
+
+Required environment variables:
+  RESEND_API_KEY   API key from Resend
+  ALERT_TO_EMAIL   recipient email address
+  ALERT_FROM_EMAIL verified sender, e.g. CrimeMap <alerts@your-verified-domain.com>
+
+For Resend testing, use the sender address allowed by your Resend account and
+send only to an address permitted by that account. Never commit API keys.
 """
 
+import datetime as dt
 import json
-import smtplib
-import datetime
-import urllib.request
+import os
 import urllib.error
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import urllib.request
 from pathlib import Path
 
-DATA_DIR = Path(__file__).parent / "data"
-CONFIG_FILE = DATA_DIR / "email_config.json"
+DATA_DIR = Path(__file__).resolve().parent / "data"
 LOG_FILE = DATA_DIR / "email_notifications.log"
+RESEND_ENDPOINT = "https://api.resend.com/emails"
+
+
+def _log(event_type, recipient, subject, status, details=""):
+    """Write a best-effort local log; logging must not crash notification flow."""
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        safe_details = str(details).replace("\n", " ")[:500]
+        line = (
+            f"[{dt.datetime.now(dt.timezone.utc).isoformat()}] "
+            f"[{event_type}] TO: {recipient} | STATUS: {status} | "
+            f"SUBJECT: {subject} | DETAILS: {safe_details}\n"
+        )
+        with LOG_FILE.open("a", encoding="utf-8") as log_file:
+            log_file.write(line)
+    except OSError as exc:
+        print(f"Notification log write failed: {exc}")
 
 
 def load_config():
-    if not CONFIG_FILE.exists():
-        return {
-            "target_email": "siddarthssakthivel@gmail.com",
-            "sender_email": "c4i.puducherry.police@gmail.com",
-            "smtp_server": "smtp.gmail.com",
-            "smtp_port": 587,
-            "smtp_user": "",
-            "smtp_pass": "",
-            "enabled": True
-        }
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """Load settings from deployment environment variables."""
+    return {
+        "target_email": os.getenv("ALERT_TO_EMAIL", "").strip(),
+        "sender_email": os.getenv("ALERT_FROM_EMAIL", "").strip(),
+        "resend_api_key": os.getenv("RESEND_API_KEY", "").strip(),
+        "enabled": os.getenv("EMAIL_NOTIFICATIONS_ENABLED", "true").lower() == "true",
+    }
 
 
-def save_config(cfg):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-        json.dump(cfg, f, indent=2)
+def send_email(subject, text_body, fields=None):
+    """Send email through Resend; returns a truthful success/error result."""
+    config = load_config()
+    recipient = config["target_email"]
+    sender = config["sender_email"]
+    api_key = config["resend_api_key"]
 
+    if not config["enabled"]:
+        return {"success": False, "mode": "DISABLED", "message": "Email notifications are disabled."}
+    if not recipient or not sender or not api_key:
+        missing = [name for name, value in (
+            ("ALERT_TO_EMAIL", recipient),
+            ("ALERT_FROM_EMAIL", sender),
+            ("RESEND_API_KEY", api_key),
+        ) if not value]
+        message = "Missing deployment environment variable(s): " + ", ".join(missing)
+        _log("EMAIL", recipient or "(unset)", subject, "CONFIG_ERROR", message)
+        return {"success": False, "mode": "CONFIG_ERROR", "message": message}
 
-def append_to_log(entry_type, recipient, subject, preview, status):
-    now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_line = f"[{now_str}] [{entry_type}] TO: {recipient} | STATUS: {status} | SUBJECT: {subject}\n"
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        f.write(log_line)
-
-
-def send_ntfy_push(title, message, priority="urgent", tags="rotating_light,police_car"):
-    """Sends instant live push notification via ntfy.sh public push broker."""
-    try:
-        topic_url = "https://ntfy.sh/puducherry-police-c4i-secure-alert"
-        req = urllib.request.Request(
-            topic_url,
-            data=message.encode("utf-8"),
-            headers={
-                "Title": title,
-                "Priority": priority,
-                "Tags": tags,
-                "Content-Type": "text/plain; charset=utf-8"
-            }
-        )
-        urllib.request.urlopen(req, timeout=5)
-    except Exception as e:
-        print("ntfy push error (non-fatal):", e)
-
-
-def send_formsubmit_email(to_email, subject, payload_fields):
-    """
-    Delivers a real email to the user's inbox using the FormSubmit API.
-    Does not require server SMTP or Gmail credentials.
-    """
-    try:
-        url = f"https://formsubmit.co/ajax/{to_email}"
-        data_dict = {
-            "_subject": subject,
-            "_template": "box",
-            "_captcha": "false",
-            "Department": "Puducherry Police C4I Center",
-            **payload_fields
-        }
-        json_data = json.dumps(data_dict).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=json_data,
-            headers={
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0",
-                "Origin": "http://127.0.0.1:5000",
-                "Referer": "http://127.0.0.1:5000/"
-            }
-        )
-        res = urllib.request.urlopen(req, timeout=10)
-        res_text = res.read().decode("utf-8")
-        res_json = json.loads(res_text)
-
-        if res_json.get("success") == "true" or res_json.get("success") is True:
-            append_to_log("FORMSUBMIT_API", to_email, subject, "Delivered to inbox", "DELIVERED_SUCCESS")
-            return {
-                "success": True,
-                "mode": "REAL_EMAIL",
-                "recipient": to_email,
-                "message": f"Real email dispatched directly to {to_email} inbox!"
-            }
-        else:
-            msg = res_json.get("message", "Pending activation")
-            append_to_log("FORMSUBMIT_API", to_email, subject, msg, "ACTIVATION_REQUIRED")
-            return {
-                "success": True,
-                "mode": "ACTIVATION_REQUIRED",
-                "recipient": to_email,
-                "message": msg
-            }
-    except Exception as e:
-        err_msg = str(e)
-        append_to_log("FORMSUBMIT_ERROR", to_email, subject, err_msg, "FAILED")
-        return {
-            "success": False,
-            "mode": "ERROR",
-            "recipient": to_email,
-            "message": f"FormSubmit error: {err_msg}"
-        }
-
-
-def attempt_smtp_send(config, to_email, subject, plain_text, html_content):
-    """Attempts direct SMTP if credentials provided."""
-    smtp_user = config.get("smtp_user", "").strip()
-    smtp_pass = config.get("smtp_pass", "").strip()
-    sender = config.get("sender_email", "c4i.puducherry.police@gmail.com")
-
-    if not smtp_user or not smtp_pass:
-        return None  # Will fallback to FormSubmit API
+    details = "\n".join(f"{key}: {value}" for key, value in (fields or {}).items())
+    body = text_body + ("\n\nDetails:\n" + details if details else "")
+    payload = {
+        "from": sender,
+        "to": [recipient],
+        "subject": subject,
+        "text": body,
+    }
+    request = urllib.request.Request(
+        RESEND_ENDPOINT,
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "CrimeMap-Notification-Service/1.0",
+        },
+        method="POST",
+    )
 
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"Puducherry Police C4I <{sender}>"
-        msg["To"] = to_email
-
-        part1 = MIMEText(plain_text, "plain")
-        part2 = MIMEText(html_content, "html")
-        msg.attach(part1)
-        msg.attach(part2)
-
-        server = smtplib.SMTP(config.get("smtp_server", "smtp.gmail.com"), config.get("smtp_port", 587), timeout=10)
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.sendmail(sender, [to_email], msg.as_string())
-        server.quit()
-
-        append_to_log("LIVE_SMTP", to_email, subject, plain_text[:80], "DELIVERED_SUCCESS")
+        with urllib.request.urlopen(request, timeout=15) as response:
+            response_body = response.read().decode("utf-8", errors="replace")
+            response_data = json.loads(response_body) if response_body else {}
+        # A successful API response means accepted by provider, not guaranteed inbox delivery.
+        email_id = response_data.get("id", "")
+        _log("RESEND_API", recipient, subject, "ACCEPTED", f"provider_id={email_id}")
         return {
             "success": True,
-            "mode": "LIVE_SMTP",
-            "recipient": to_email,
-            "message": f"Live email successfully delivered to {to_email} via Gmail SMTP!"
+            "mode": "RESEND_API",
+            "recipient": recipient,
+            "provider_id": email_id,
+            "message": "Email accepted by the email provider for delivery.",
         }
-    except Exception as e:
-        err_msg = str(e)
-        append_to_log("SMTP_ERROR", to_email, subject, err_msg, "FALLBACK_TRIGGERED")
-        return None
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="replace")
+        _log("RESEND_API", recipient, subject, "HTTP_ERROR", f"HTTP {exc.code}: {error_body}")
+        return {"success": False, "mode": "HTTP_ERROR", "message": f"Email provider returned HTTP {exc.code}: {error_body[:300]}"}
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
+        _log("RESEND_API", recipient, subject, "FAILED", str(exc))
+        return {"success": False, "mode": "SEND_ERROR", "message": f"Could not send email: {exc}"}
 
 
 def send_fir_notification(fir_record):
-    """Sends notification when a new Live FIR is registered."""
-    config = load_config()
-    to_email = config.get("target_email", "siddarthssakthivel@gmail.com")
-
-    subject = f"🚨 [PUDUCHERRY POLICE C4I] LIVE FIR REGISTERED: {fir_record['id']} - {fir_record.get('category', 'Incident')}"
-    gmaps_url = f"https://www.google.com/maps?q={fir_record.get('lat')},{fir_record.get('lng')}"
-
-    # Also send instant push
-    push_title = f"🚨 FIR REGISTERED: {fir_record.get('id')}"
-    push_body = f"{fir_record.get('title')} | Station: {fir_record.get('police_station')} | Severity: {fir_record.get('severity')}"
-    send_ntfy_push(push_title, push_body, priority="high", tags="memo,police_officer")
-
-    # Try SMTP first if configured
-    smtp_res = attempt_smtp_send(config, to_email, subject, push_body, f"<p>{push_body}</p>")
-    if smtp_res:
-        return smtp_res
-
-    # Use FormSubmit email API to deliver to real inbox
+    fir_id = fir_record.get("id", "Unknown")
+    category = fir_record.get("category", "Incident")
+    subject = f"CrimeMap complaint registered: {fir_id} - {category}"
+    maps_url = f"https://www.google.com/maps?q={fir_record.get('lat', '')},{fir_record.get('lng', '')}"
     fields = {
-        "FIR_Reference_ID": fir_record.get("id"),
-        "Incident_Title": fir_record.get("title"),
-        "Crime_Category": fir_record.get("category"),
-        "IPC_Section": fir_record.get("ipc_section", "IPC 379"),
-        "Severity": fir_record.get("severity", "High"),
-        "Police_Station": fir_record.get("police_station"),
-        "Location": fir_record.get("location_name", "Puducherry"),
-        "Coordinates": f"Lat {fir_record.get('lat')}, Lng {fir_record.get('lng')}",
-        "Google_Maps_Link": gmaps_url,
-        "Timestamp": fir_record.get("timestamp"),
-        "Officer_Action": fir_record.get("description", "Immediate response team dispatched")
+        "Complaint ID": fir_id,
+        "Title": fir_record.get("title", "Not provided"),
+        "Category": category,
+        "Severity": fir_record.get("severity", "Not specified"),
+        "Police station": fir_record.get("police_station", "Not specified"),
+        "Location": fir_record.get("location_name", "Not specified"),
+        "Coordinates": f"{fir_record.get('lat', '')}, {fir_record.get('lng', '')}",
+        "Map": maps_url,
+        "Timestamp": fir_record.get("timestamp", dt.datetime.now(dt.timezone.utc).isoformat()),
+        "Description": fir_record.get("description", "Not provided"),
     }
-
-    return send_formsubmit_email(to_email, subject, fields)
+    return send_email(subject, "A new complaint was submitted to CrimeMap.", fields)
 
 
 def send_sos_notification(sos_record):
-    """Sends immediate high-priority alert when a 112 CAD Emergency SOS is dispatched."""
-    config = load_config()
-    to_email = config.get("target_email", "siddarthssakthivel@gmail.com")
-
-    emergency_type = sos_record.get("emergency_type", "Priority 112 SOS Call")
-    target_coords = sos_record.get("target_coordinates", {})
-    lat = target_coords.get("lat", 11.9328)
-    lng = target_coords.get("lng", 79.8352)
-    unit = sos_record.get("dispatched_unit", {})
-    callsign = unit.get("callsign", "PCR-01")
-    unit_id = unit.get("id", "PCR-01")
-    vehicle = unit.get("vehicle", "Mahindra Bolero")
-    officer = unit.get("officer", "Duty SI")
-    eta_mins = sos_record.get("eta_mins", 4)
-    dist_km = sos_record.get("distance_km", 0.8)
-    backup = sos_record.get("nearby_backup")
-
-    subject = f"🚨 [PUDUCHERRY POLICE C4I] URGENT 112 SOS DISPATCH: {emergency_type} (ETA: {eta_mins} mins)"
-    gmaps_url = f"https://www.google.com/maps?q={lat},{lng}"
-
-    # Send instant push
-    push_title = f"🚨 112 SOS EMERGENCY DISPATCH: {callsign}"
-    push_body = f"Incident: {emergency_type} | ETA: {eta_mins} mins ({dist_km} km) | Officer: {officer}"
-    send_ntfy_push(push_title, push_body, priority="urgent", tags="rotating_light,fire_engine")
-
-    # Try SMTP first if configured
-    smtp_res = attempt_smtp_send(config, to_email, subject, push_body, f"<p>{push_body}</p>")
-    if smtp_res:
-        return smtp_res
-
-    # Use FormSubmit email API to deliver to real inbox
+    emergency_type = sos_record.get("emergency_type", "Emergency SOS")
+    coords = sos_record.get("target_coordinates") or {}
+    lat, lng = coords.get("lat", ""), coords.get("lng", "")
+    unit = sos_record.get("dispatched_unit") or {}
+    subject = f"URGENT CrimeMap SOS alert: {emergency_type}"
     fields = {
-        "EMERGENCY_INCIDENT": emergency_type,
-        "ALERT_LEVEL": "CODE RED / PRIORITY 1 DISPATCH",
-        "Assigned_Patrol_Van": f"{callsign} ({unit_id})",
-        "Vehicle_Type": vehicle,
-        "Officer_in_Command": officer,
-        "Estimated_ETA": f"{eta_mins} Minutes",
-        "Distance_to_Scene": f"{dist_km} km",
-        "Sector": unit.get("sector", "Puducherry Central"),
-        "Backup_Unit": backup.get("callsign") if backup else "None in immediate sector",
-        "GPS_Coordinates": f"Lat {lat}, Lng {lng}",
-        "Google_Maps_Direct_Link": gmaps_url,
-        "Dispatch_Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "Emergency": emergency_type,
+        "Latitude": lat,
+        "Longitude": lng,
+        "Map": f"https://www.google.com/maps?q={lat},{lng}",
+        "Dispatched unit": unit.get("callsign", unit.get("id", "Not specified")),
+        "Officer": unit.get("officer", "Not specified"),
+        "ETA minutes": sos_record.get("eta_mins", "Not specified"),
+        "Distance km": sos_record.get("distance_km", "Not specified"),
+        "Timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
     }
-
-    return send_formsubmit_email(to_email, subject, fields)
+    return send_email(subject, "An SOS event was submitted to CrimeMap. Verify and respond using your authorized emergency workflow.", fields)
 
 
 def get_recent_email_logs(limit=20):
-    """Returns recent lines from the email log file."""
-    if not LOG_FILE.exists():
+    try:
+        if not LOG_FILE.exists():
+            return []
+        with LOG_FILE.open("r", encoding="utf-8") as log_file:
+            return [line.rstrip("\n") for line in log_file.readlines()[-max(1, int(limit)):]]
+    except OSError as exc:
+        print(f"Could not read notification log: {exc}")
         return []
-    with open(LOG_FILE, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-    return [line.strip() for line in lines[-limit:]]
+
+
+
+
+
+          
+   
+           
+       
+        
+
+
+   
+  
+       
+    
