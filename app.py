@@ -13,7 +13,6 @@ from notifier import (
     send_fir_notification,
     send_sos_notification,
     load_config as load_email_cfg,
-    save_config as save_email_cfg,
     get_recent_email_logs
 )
 
@@ -327,10 +326,20 @@ ADMIN_PIN = "1122"
 
 @app.route("/api/email-config", methods=["GET", "POST"])
 def email_config_endpoint():
-    pin = request.args.get("pin") if request.method == "GET" else (request.get_json(silent=True) or {}).get("pin")
-    if pin != ADMIN_PIN:
-        return jsonify({"error": "Unauthorized. Valid Officer Security PIN required."}), 401
+    if request.method == "POST":
+        return jsonify({
+            "status": "error",
+            "message": "Please update email settings using Vercel environment variables."
+        }), 400
 
+    pin = request.args.get("pin")
+
+    if pin != ADMIN_PIN:
+        return jsonify({
+            "error": "Unauthorized. Valid Officer Security PIN required."
+        }), 401
+
+    return jsonify(load_email_cfg())
     if request.method == "POST":
         data = request.get_json(force=True)
         cfg = load_email_cfg()
