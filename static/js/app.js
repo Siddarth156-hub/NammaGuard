@@ -1118,24 +1118,55 @@ async function saveEmailConfig() {
   const smtpPass = document.getElementById('emailSmtpPassInput').value.trim();
 
   try {
-    const res = await fetch('/api/email-config', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        pin: currentAdminPin,
-        target_email: targetEmail,
-        smtp_user: smtpUser,
-        smtp_pass: smtpPass
-      })
-    });
-    if (res.status === 200) {
-      alert('Security & Notification settings updated successfully!');
-      loadEmailLogs();
-    } else {
-      alert('Unauthorized request. Session expired.');
-      logoutAdminSession();
+  const res = await fetch('/api/email-config', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      pin: currentAdminPin,
+      target_email: targetEmail,
+      smtp_user: smtpUser,
+      smtp_pass: smtpPass
+    })
+  });
+
+  const contentType = res.headers.get('content-type') || '';
+  const responseText = await res.text();
+
+  let data = {};
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      throw new Error('The server returned invalid JSON.');
     }
-  } catch (err) {
-    alert('Error saving configuration: ' + err);
+  } else {
+    console.error('Email API response:', res.status, responseText.slice(0, 500));
+    throw new Error(
+      `Expected JSON but received HTML or another format (HTTP ${res.status}). Check the API route.`
+    );
   }
+
+  if (!res.ok) {
+    throw new Error(
+      data.detail || data.error || data.message ||
+      `Request failed with HTTP ${res.status}`
+    );
+  }
+
+  if (data.success === false || data.error) {
+    throw new Error(data.error || data.message || 'Email configuration failed.');
+  }
+
+  console.log('Email configuration response:', data);
+  // Keep your existing success-handling code here.
+
+} catch (error) {
+  console.error('Email configuration failed:', error);
+  alert('Email configuration failed: ' + error.message);
 }
+
+  
