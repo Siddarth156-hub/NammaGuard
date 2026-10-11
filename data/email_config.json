@@ -1,9 +1,9 @@
 {
   "target_email": "siddarthssakthivel@gmail.com",
-  "sender_email": "c4i.puducherry.police@gmail.com",
+  "sender_email": "siddarthssakthivel@gmail.com",
   "smtp_server": "smtp.gmail.com",
   "smtp_port": 587,
-  "smtp_user": "",
-  "smtp_pass": "12345678",
+  "smtp_user": "siddarthssakthivel@gmail.com",
+  "smtp_pass": "uihx awyu rgyc cvep",
   "enabled": true
 }
