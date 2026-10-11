@@ -8,7 +8,8 @@ Required environment variables:
 For Resend testing, use the sender address allowed by your Resend account and
 send only to an address permitted by that account. Never commit API keys.
 """
-
+from dotenv import load_dotenv
+load_dotenv()   
 import datetime as dt
 import json
 import os
