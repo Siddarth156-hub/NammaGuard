@@ -1245,3 +1245,59 @@ export default async function handler(req, res) {
   });
   res.status(200).json({message:"SOS email sent"});
 }  
+
+  import {useState} from "react";
+
+export default function Home() {
+  const [form,setForm]=useState({name:"",phone:"",location:"",description:""});
+  const [status,setStatus]=useState(null);
+
+  const handleChange=e=>setForm({...form,[e.target.name]:e.target.value});
+  const handleSubmit=async e=>{
+    e.preventDefault(); setStatus("Sending…");
+    const res=await fetch("/api/crime-sos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
+    const data=await res.json();
+    setStatus(res.ok?"✅ SOS sent!":"❌ "+(data.error||"error"));
+  };
+
+  return (
+    <div style={{maxWidth:600,margin:"auto",padding:"2rem"}}>
+      <h1>Namma Guards – Crime SOS</h1>
+      <form onSubmit={handleSubmit}>
+        <label>Name:<input name="name" value={form.name} onChange={handleChange} required/></label><br/>
+        <label>Phone:<input name="phone" value={form.phone} onChange={handleChange} required/></label><br/>
+        <label>Location:<input name="location" value={form.location} onChange={handleChange} required/></label><br/>
+        <label>Description:<textarea name="description" value={form.description} onChange={handleChange}/></label><br/>
+        <button type="submit" style={{marginTop:"1rem"}}>🚨 Send Crime SOS</button>
+      </form>
+      {status && <p>{status}</p>}
+    </div>
+  );
+}import {useState} from "react";
+
+export default function Home() {
+  const [form,setForm]=useState({name:"",phone:"",location:"",description:""});
+  const [status,setStatus]=useState(null);
+
+  const handleChange=e=>setForm({...form,[e.target.name]:e.target.value});
+  const handleSubmit=async e=>{
+    e.preventDefault(); setStatus("Sending…");
+    const res=await fetch("/api/crime-sos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(form)});
+    const data=await res.json();
+    setStatus(res.ok?"✅ SOS sent!":"❌ "+(data.error||"error"));
+  };
+
+  return (
+    <div style={{maxWidth:600,margin:"auto",padding:"2rem"}}>
+      <h1>Namma Guards – Crime SOS</h1>
+      <form onSubmit={handleSubmit}>
+        <label>Name:<input name="name" value={form.name} onChange={handleChange} required/></label><br/>
+        <label>Phone:<input name="phone" value={form.phone} onChange={handleChange} required/></label><br/>
+        <label>Location:<input name="location" value={form.location} onChange={handleChange} required/></label><br/>
+        <label>Description:<textarea name="description" value={form.description} onChange={handleChange}/></label><br/>
+        <button type="submit" style={{marginTop:"1rem"}}>🚨 Send Crime SOS</button>
+      </form>
+      {status && <p>{status}</p>}
+    </div>
+  );
+}
