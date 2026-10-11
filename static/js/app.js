@@ -162,16 +162,70 @@ function toggleMapLayer(layerKey) {
 /* ==========================================================
    3. DATA LOADING & RENDERING
    ========================================================== */
-async function loadAllData() {
+async function fetchJson(url) {
+  const res = await fetch(url, {
+    headers: { Accept: 'application/json' }
+  });
+
+  const text = await res.text();
+  const contentType = res.headers.get('content-type') || '';
+
+  if (!res.ok) {
+    console.error(`API failed: ${url}`, res.status, text.slice(0, 300));
+    throw new Error(`${url} returned HTTP ${res.status}`);
+  }
+
+  if (!contentType.includes('application/json')) {
+    console.error(`Non-JSON response from ${url}:`, text.slice(0, 300));
+    throw new Error(
+      `${url} returned HTML or another non-JSON response`
+    );
+  }
+
   try {
-    const [incidentsRes, stationsRes, cctvsRes, darkspotsRes, patrolsRes, analyticsRes] = await Promise.all([
-      fetch('/api/incidents'),
-      fetch('/api/stations'),
-      fetch('/api/cctvs'),
-      fetch('/api/darkspots'),
-      fetch('/api/patrols'),
-      fetch('/api/analytics')
-    ]);
+    return JSON.parse(text);
+  } catch (error) {
+    console.error(`Invalid JSON from ${url}:`, text.slice(0, 300));
+    throw error;
+  }
+}
+
+try {
+  const [
+    incidentsJson,
+    allStations,
+    allCctvs,
+    allDarkSpots,
+    allPatrols,
+    analyticsData
+  ] = await Promise.all([
+    fetchJson('/api/incidents'),
+    fetchJson('/api/stations'),
+    fetchJson('/api/cctvs'),
+    fetchJson('/api/darkspots'),
+    fetchJson('/api/patrols'),
+    fetchJson('/api/analytics')
+  ]);
+
+  allIncidents = incidentsJson.data;
+
+  renderIncidents(allIncidents);
+  renderHeatmap(allIncidents);
+  renderStations(allStations);
+  renderPatrols(allPatrols);
+  renderCctvs(allCctvs);
+  renderDarkSpots(allDarkSpots);
+
+  updateKPIs(analyticsData.summary);
+  renderCharts(analyticsData);
+  refreshPredictions();
+  loadForecastCurve();
+  generateOptimalPatrolRoute();
+
+} catch (error) {
+  console.error('Dashboard API loading failed:', error);
+  alert('Dashboard loading failed: ' + error.message);
+}
 
     const incidentsJson = await incidentsRes.json();
     allIncidents = incidentsJson.data;
